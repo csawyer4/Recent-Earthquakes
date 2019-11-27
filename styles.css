@@ -1,0 +1,29 @@
+html {
+  background: linear-gradient(to bottom, #cccccc 0%, #ffffff 100%);
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+}
+
+h2 {
+  text-align: center;
+}
+
+p {
+  text-align: center;
+  font-size: 1.2em;
+}
+
+#popup {
+  text-align: left;
+}
+#foot {
+  text-align: left;
+  background: #808080;
+}
+
+#map, #map2 {
+  width: 90vw; height: 85vh; margin: 0 auto;
+}

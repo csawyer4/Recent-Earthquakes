@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
+		<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.css' rel='stylesheet'/>
+		<link href="styles.css" rel="stylesheet"/>
+			<title>Recent Earthquakes</title>
+	</head>
+
+	<body>
+		<h1>Recent Earthquakes Around the World Using Real Time Data</h1>
+			<h2>Earthquakes From the Last 24 Hours</h2>
+		<div id='map'></div>
+				<p>Tectonic plates are always moving and causing earthquakes. Most of them are not even felt because they are small earthquakes or did not happen where people are located, but this does not mean that bigger earthquakes can't happen in populated areas. This map shows real time data of all the earthquakes that have occured around the world in the last 24 hours. These earthquakes occur when the tectonic plates converge(come together) or fault(break due to uneven motion). As you can see, tectonic plates are very active and there are many earthquakes that happen everyday. </p>
+
+			<h2>Major Earthquakes From the Last Month</h2>
+		<div id='map2'></div>
+					<p>Major earthquakes happen less often than minor ones, but as you can see they still happen frequently over the course of a month. These earthquakes have a magnitude over 3, and are classified by USGS as significant earthquakes. By comparing the two maps you can see that significant earthquakes happen roughly in the same locations that everyday earthquakes happen. Just goes to show that you never know when a major earthquake could hit.  </p>
+
+
+		<script>
+
+			mapboxgl.accessToken = 'pk.eyJ1IjoiY3Nhd3llcjQiLCJhIjoiY2szZ3Fpa3NlMDNmcjNtbWVjeTJxamdtNCJ9.5cBiUTO09PReqHFSBBwnhg';
+
+			var map = new mapboxgl.Map({
+			    container: 'map',
+			    style: 'mapbox://styles/csawyer4/ck36bxzyo382x1coe9zpkovqk',
+			    center: [-122, 47],
+			    zoom: 0
+			});
+
+			map.on('load', function(){
+				map.addSource('earthquakes', {
+							"type": "geojson",
+							"data": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson",
+							"cluster": true,
+							"clusterMaxZoom": 8,
+							"clusterRadius": 35
+					});
+					map.addLayer({
+						"id":"clusters",
+						"type":"circle",
+						"source":"earthquakes",
+						"filter": ["has", "point_count"],
+						"paint":{
+							"circle-color": [
+							"step",
+							["get", "point_count"],
+							"#ff8c00",
+							100,
+							"#ff0000"
+							],
+							"circle-radius": [
+							"step",
+							["get", "point_count"],
+							20,
+							100,
+							30
+							]
+							}
+					});
+
+					map.addLayer({
+							id: "cluster-count",
+							type: "symbol",
+							source: "earthquakes",
+							filter: ["has", "point_count"],
+							layout: {
+							"text-field": "{point_count_abbreviated}",
+							"text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+							"text-size": 12
+							}
+					});
+					map.addLayer({
+							id: "unclustered-point",
+							type: "circle",
+							source: "earthquakes",
+							filter: ["!", ["has", "point_count"]],
+							paint: {
+							"circle-color": "#ffff00",
+							"circle-radius": 4,
+							"circle-stroke-width": 0.5,
+							"circle-stroke-color": "#000000"
+							}
+					});
+
+					map.on('click', 'clusters', function (e) {
+							var features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] });
+							var clusterId = features[0].properties.cluster_id;
+							map.getSource('earthquakes').getClusterExpansionZoom(clusterId, function (err, zoom) {
+							if (err)
+							return;
+
+					map.easeTo({
+							center: features[0].geometry.coordinates,
+							zoom: zoom
+					});
+				});
+			});
+
+					map.on('mouseenter', 'clusters', function () {
+					map.getCanvas().style.cursor = 'pointer';
+				});
+					map.on('mouseleave', 'clusters', function () {
+					map.getCanvas().style.cursor = '';
+				});
+			});
+
+
+			map.on('click', 'unclustered-point', function (e) {
+
+						var coordinates = e.features[0].geometry.coordinates;
+
+						var description = "<h3>" + e.features[0].properties.title + "</h3><p id=popup>Magnitude: " + e.features[0].properties.mag + "</br># of People Felt Quake: "+ e.features[0].properties.felt + "</br>More details: <a href='" + e.features[0].properties.url + "' target='_blank'>Here</a></p>";
+
+						new mapboxgl.Popup()
+										.setLngLat(coordinates)
+										.setHTML(description)
+										.addTo(map);
+			});
+			map.addControl(new mapboxgl.NavigationControl());
+
+
+//Map2 script
+			mapboxgl.accessToken = 'pk.eyJ1IjoiY3Nhd3llcjQiLCJhIjoiY2szZ3Fpa3NlMDNmcjNtbWVjeTJxamdtNCJ9.5cBiUTO09PReqHFSBBwnhg';
+
+			var map2 = new mapboxgl.Map({
+					container: 'map2',
+					style: 'mapbox://styles/csawyer4/ck3gqd11h0cpl1cplalm8zlot',
+					center: [-112, 43],
+					zoom: 1
+			});
+
+			map2.addControl(new mapboxgl.NavigationControl());
+
+			map2.on('load', function(){
+				map2.addSource('monthquake', {
+							"type": "geojson",
+							"data": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_month.geojson"
+					});
+					map2.addLayer({
+						"id":"earthquake2",
+						"type": "circle",
+						"source": "monthquake",
+						"paint": {
+							"circle-color": "#4d194d",
+							"circle-radius": 6,
+							"circle-stroke-width": 0.5,
+							"circle-stroke-color": "#ffffff"
+							}
+						})
+					});
+
+
+			map2.on('click', 'earthquake2', function (e) {
+					var coordinates = e.features[0].geometry.coordinates;
+					var description = "<h3>" + e.features[0].properties.title + "</h3><p id=popup>Magnitude: " + e.features[0].properties.mag +"</br># of People Felt Quake: "+ e.features[0].properties.felt + "</br>More details: <a href='" + e.features[0].properties.url + "' target='_blank'>Here</a></p>";
+					new mapboxgl.Popup()
+												.setLngLat(coordinates)
+												.setHTML(description)
+												.addTo(map2);
+					});
+
+		</script>
+
+		<p id="foot"><strong>References</strong></br>
+					USGS. Past Day, All Earthquakes- Live GEOJSON. <a href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php" target="_blank"> Earthquake Hazard Program.</a></br>
+					USGS. Past 30 Days, Significant Earthquakes-Live GEOJSON. <a href="https://earthquake.usgs.gov/earthquakes/feed/v1.0/geojson.php" target="_blank"> Earthquake Hazard Program.</a></br>
+			</p>
+	</body>
+</html>
